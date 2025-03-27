@@ -2,7 +2,7 @@
   touch-action: none;
   font-weight: 700;
   width: fit-content;
-  max-width: 200px;
+  max-width: 300px;
   background-color: #f1f1f1;
   border: 2px solid #00ff37;
   border-radius: 8px;
@@ -13,4 +13,3 @@
 .draggable-content {
   padding: 2px;
 }
-
