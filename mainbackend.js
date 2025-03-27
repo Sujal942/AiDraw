@@ -5,38 +5,38 @@ const {
   HarmBlockThreshold,
   HarmCategory,
 } = require("@google/generative-ai");
+const app = express();
 require("dotenv").config();
 
-const app = express();
 const PORT = process.env.PORT || 8000;
-const API_KEY = process.env.GEMINI_API_KEY;
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Route: Upload and analyze image
+// Gemini Image Processing
+const API_KEY = process.env.GEMINI_API_KEY;
+
+// Route to upload image and send it for analysis
 app.post("/analyze", async (req, res) => {
   const { dataURL } = req.body;
 
   if (!dataURL) {
-    return res.status(400).json({ message: "No image data provided." });
+    return res.status(400).send({ message: "No image data provided." });
   }
 
   try {
     const analysisResult = await analyzeWithGemini(dataURL);
-    return res.status(200).json({
-      message: "Image analyzed successfully.",
-      result: analysisResult,
-    });
+    return res
+      .status(200)
+      .send({ message: "Image analyzed successfully.", analysisResult });
   } catch (err) {
     console.error("Error processing image with Gemini:", err);
-    return res.status(500).json({ message: "Error analyzing image." });
+    return res.status(500).send({ message: "Error analyzing image." });
   }
 });
 
-// Function: Analyze image with Google Gemini API
+// Analyze the image with Google Gemini API
 async function analyzeWithGemini(imageBase64) {
   try {
     const genAI = new GoogleGenerativeAI(API_KEY);
@@ -57,13 +57,11 @@ async function analyzeWithGemini(imageBase64) {
           {
             inline_data: {
               mime_type: "image/png",
-              data: imageBase64.split(",")[1], // Extract base64 data
+              data: imageBase64.split(",")[1],
             },
           },
           {
-            text: `Analyze the given image. Extract **all mathematical equations, symbols, and expressions** present in the image. Then, **solve** the equations and **explain** the steps in a structured format using Markdown. 
-            
-If the image does not contain math-related content, provide a **detailed description** of its contents.`,
+            text: "You have been given an image with some mathematical expressions, equations, or graphical problems, and you need to solve them...",
           },
         ],
       },
@@ -71,20 +69,16 @@ If the image does not contain math-related content, provide a **detailed descrip
 
     const result = await model.generateContentStream({ contents });
     let responseText = "";
-
     for await (let response of result.stream) {
       responseText += response.text();
     }
-
-    // Format response to look clean
-    return responseText.trim() || "No relevant mathematical content found.";
+    return responseText;
   } catch (err) {
     console.error("Error analyzing with Gemini:", err);
     return "Analysis failed.";
   }
 }
 
-// Start server
 app.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
+  console.log("Server is listening on port 8000");
 });
